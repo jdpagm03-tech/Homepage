@@ -1,1 +1,13 @@
 # Homepage
+## Docker-Compose
+```yml
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: my-webpage
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+```
