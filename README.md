@@ -3,7 +3,7 @@
 ```yaml
 services:
   web:
-    build: .
+    image: homepagev123:latest
     container_name: my-webpage
     ports:
       - "1102:80"
