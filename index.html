@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Homelab Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="top-bar">
+    <div class="time-block">
+        <div id="clock"></div>
+        <div id="date"></div>
+    </div>
+
+    <div class="search-container">
+        <input type="text" id="search" placeholder="Search services or press Enter to search web...">
+    </div>
+
+    <div class="weather-block">
+        <div id="weather-temp"></div>
+        <div id="weather-desc"></div>
+        <div id="weather-location"></div>
+    </div>
+</header>
+
+<main>
+    <div class="controls">
+        <button id="addServiceBtn">+ Add Service</button>
+    </div>
+
+    <section id="categoriesContainer"></section>
+</main>
+
+<!-- Modal -->
+<div id="serviceModal" class="modal hidden">
+    <div class="modal-content">
+        <h2 id="modalTitle">Add Service</h2>
+        <input type="text" id="serviceName" placeholder="Service Name">
+        <input type="text" id="serviceUrl" placeholder="https://example.local">
+        <input type="text" id="serviceDesc" placeholder="Description">
+        <input type="text" id="serviceCategory" placeholder="Category">
+        <input type="text" id="serviceIcon" placeholder="Custom Icon URL (optional)">
+        <button id="saveService">Save</button>
+        <button id="cancelService" class="secondary">Cancel</button>
+    </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
