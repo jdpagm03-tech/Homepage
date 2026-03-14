@@ -3,7 +3,7 @@
 ================================ */
 
 const DEFAULT_LOCATION = "Paderborn,de";
-const WEATHER_API_KEY = "YOUR_OPENWEATHER_API_KEY";
+const WEATHER_API_KEY = ""; // <-- PUT YOUR KEY HERE (leave empty to disable)
 
 /* ===============================
    DOM REFERENCES
@@ -53,9 +53,11 @@ updateClock();
 ================================ */
 
 async function loadWeather(location = DEFAULT_LOCATION){
-    if(WEATHER_API_KEY === "YOUR_OPENWEATHER_API_KEY"){
+
+    if(!WEATHER_API_KEY){
         document.getElementById("weather-location").textContent = location;
-        document.getElementById("weather-desc").textContent = "Add API key";
+        document.getElementById("weather-desc").textContent = "Weather disabled";
+        document.getElementById("weather-temp").textContent = "";
         return;
     }
 
@@ -63,6 +65,9 @@ async function loadWeather(location = DEFAULT_LOCATION){
         const res = await fetch(
             `https://api.openweathermap.org/data/2.5/weather?q=${location}&units=metric&appid=${WEATHER_API_KEY}`
         );
+
+        if(!res.ok) throw new Error("API error");
+
         const data = await res.json();
 
         document.getElementById("weather-temp").textContent =
@@ -73,6 +78,7 @@ async function loadWeather(location = DEFAULT_LOCATION){
 
         document.getElementById("weather-location").textContent =
             data.name;
+
     } catch {
         document.getElementById("weather-desc").textContent = "Weather unavailable";
     }
@@ -88,9 +94,17 @@ function saveState(){
     localStorage.setItem("collapsedCategories", JSON.stringify(collapsed));
 }
 
+function normalizeUrl(url){
+    if(!url.startsWith("http://") && !url.startsWith("https://")){
+        return "http://" + url;
+    }
+    return url;
+}
+
 function getFavicon(url){
     try{
-        const u = new URL(url);
+        const normalized = normalizeUrl(url);
+        const u = new URL(normalized);
         return `${u.origin}/favicon.ico`;
     }catch{
         return "https://www.google.com/s2/favicons?sz=64&domain_url=" + url;
@@ -160,7 +174,9 @@ function render(){
                     <p>${service.desc}</p>
                 `;
 
-                card.onclick = () => window.open(service.url,"_blank");
+                card.onclick = () => {
+                    window.open(normalizeUrl(service.url), "_blank");
+                };
 
                 card.oncontextmenu = (e) => {
                     e.preventDefault();
@@ -236,10 +252,13 @@ addServiceBtn.onclick = () => {
 cancelBtn.onclick = () => modal.classList.add("hidden");
 
 saveBtn.onclick = () => {
+
+    const normalized = normalizeUrl(urlInput.value);
+
     const newService = {
         id: editId || Date.now(),
         name: nameInput.value,
-        url: urlInput.value,
+        url: normalized,
         desc: descInput.value,
         category: categoryInput.value || "General",
         icon: iconInput.value,
@@ -276,17 +295,31 @@ function openEdit(service){
 }
 
 /* ===============================
-   SEARCH
+   SEARCH (FIXED)
 ================================ */
+
+searchInput.addEventListener("input", e=>{
+    const q = e.target.value.toLowerCase();
+
+    document.querySelectorAll(".card").forEach(card=>{
+        const text = card.innerText.toLowerCase();
+        card.style.display = text.includes(q) ? "block" : "none";
+    });
+});
 
 searchInput.addEventListener("keydown", e=>{
     if(e.key==="Enter"){
-        const q = e.target.value.toLowerCase();
-        const match = services.find(s=>s.name.toLowerCase().includes(q));
+        const q = e.target.value.trim();
+        if(!q) return;
+
+        const match = services.find(s =>
+            s.name.toLowerCase().includes(q.toLowerCase())
+        );
+
         if(match){
-            window.open(match.url,"_blank");
+            window.open(normalizeUrl(match.url), "_blank");
         } else {
-            window.open("https://duckduckgo.com/?q="+q);
+            window.open("https://duckduckgo.com/?q="+encodeURIComponent(q));
         }
     }
 });
