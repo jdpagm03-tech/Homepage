@@ -1,11 +1,21 @@
 import { services, setServices, saveState } from "./state.js";
 import { renderServices } from "./services.js";
 
-function normalizeUrl(url){
-    if(!url.startsWith("http://") && !url.startsWith("https://")){
-        return "http://" + url;
+/* ===============================
+   URL NORMALIZATION
+================================ */
+
+function normalizeUrl(url) {
+
+    if (!url) return "";
+
+    url = url.trim();
+
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+        return url;
     }
-    return url;
+
+    return "https://" + url;
 }
 
 export function initModal() {
@@ -24,11 +34,9 @@ export function initModal() {
 
     let editId = null;
 
-    /* ===============================
-       OPEN ADD MODAL
-    ============================== */
-
+    /* ADD */
     addBtn.addEventListener("click", () => {
+
         editId = null;
 
         nameInput.value = "";
@@ -41,18 +49,12 @@ export function initModal() {
         modal.classList.remove("hidden");
     });
 
-    /* ===============================
-       CANCEL
-    ============================== */
-
+    /* CANCEL */
     cancelBtn.addEventListener("click", () => {
         modal.classList.add("hidden");
     });
 
-    /* ===============================
-       SAVE
-    ============================== */
-
+    /* SAVE */
     saveBtn.addEventListener("click", () => {
 
         const newService = {
@@ -65,7 +67,7 @@ export function initModal() {
             order: 999
         };
 
-        if(editId){
+        if (editId) {
             const updated = services.map(s =>
                 s.id === editId ? newService : s
             );
@@ -79,10 +81,7 @@ export function initModal() {
         renderServices();
     });
 
-    /* ===============================
-       DELETE
-    ============================== */
-
+    /* DELETE */
     deleteBtn.addEventListener("click", () => {
         const filtered = services.filter(s => s.id !== editId);
         setServices(filtered);
@@ -90,19 +89,17 @@ export function initModal() {
         renderServices();
     });
 
-    /* ===============================
-       EDIT VIA RIGHT CLICK
-    ============================== */
-
+    /* EDIT VIA RIGHT CLICK */
     document.addEventListener("contextmenu", e => {
+
         const card = e.target.closest(".card");
-        if(!card) return;
+        if (!card) return;
 
         e.preventDefault();
 
         const id = Number(card.dataset.id);
         const service = services.find(s => s.id === id);
-        if(!service) return;
+        if (!service) return;
 
         editId = id;
 
