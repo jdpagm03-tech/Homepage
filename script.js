@@ -1,55 +1,91 @@
-/* =========================
+/* ===============================
    CONFIG
-========================= */
+================================ */
 
 const DEFAULT_LOCATION = "Paderborn,de";
 const WEATHER_API_KEY = "YOUR_OPENWEATHER_API_KEY";
 
-/* =========================
+/* ===============================
+   DOM REFERENCES
+================================ */
+
+const clockEl = document.getElementById("clock");
+const dateEl = document.getElementById("date");
+const searchInput = document.getElementById("search");
+const categoriesContainer = document.getElementById("categoriesContainer");
+
+const modal = document.getElementById("serviceModal");
+const addServiceBtn = document.getElementById("addServiceBtn");
+const saveBtn = document.getElementById("saveService");
+const deleteBtn = document.getElementById("deleteService");
+const cancelBtn = document.getElementById("cancelService");
+
+const nameInput = document.getElementById("serviceName");
+const urlInput = document.getElementById("serviceUrl");
+const descInput = document.getElementById("serviceDesc");
+const categoryInput = document.getElementById("serviceCategory");
+const iconInput = document.getElementById("serviceIcon");
+
+/* ===============================
    STATE
-========================= */
+================================ */
 
 let services = JSON.parse(localStorage.getItem("services")) || [];
-let collapsedCategories = JSON.parse(localStorage.getItem("collapsedCategories")) || {};
+let collapsed = JSON.parse(localStorage.getItem("collapsedCategories")) || {};
 let editId = null;
 
-/* =========================
+/* ===============================
    CLOCK
-========================= */
+================================ */
 
 function updateClock() {
     const now = new Date();
-    clock.textContent = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    date.textContent = now.toLocaleDateString(undefined, {
+    clockEl.textContent = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    dateEl.textContent = now.toLocaleDateString(undefined, {
         weekday:'long', year:'numeric', month:'long', day:'numeric'
     });
 }
 setInterval(updateClock,1000);
 updateClock();
 
-/* =========================
+/* ===============================
    WEATHER
-========================= */
+================================ */
 
 async function loadWeather(location = DEFAULT_LOCATION){
     if(WEATHER_API_KEY === "YOUR_OPENWEATHER_API_KEY"){
-        weather-location.textContent = location;
-        weather-desc.textContent = "Add API key";
+        document.getElementById("weather-location").textContent = location;
+        document.getElementById("weather-desc").textContent = "Add API key";
         return;
+    }
+
+    try {
+        const res = await fetch(
+            `https://api.openweathermap.org/data/2.5/weather?q=${location}&units=metric&appid=${WEATHER_API_KEY}`
+        );
+        const data = await res.json();
+
+        document.getElementById("weather-temp").textContent =
+            Math.round(data.main.temp) + "°C";
+
+        document.getElementById("weather-desc").textContent =
+            data.weather[0].description;
+
+        document.getElementById("weather-location").textContent =
+            data.name;
+    } catch {
+        document.getElementById("weather-desc").textContent = "Weather unavailable";
     }
 }
 loadWeather();
 
-/* =========================
+/* ===============================
    UTILITIES
-========================= */
+================================ */
 
-function saveServices(){
+function saveState(){
     localStorage.setItem("services", JSON.stringify(services));
-}
-
-function saveCollapsed(){
-    localStorage.setItem("collapsedCategories", JSON.stringify(collapsedCategories));
+    localStorage.setItem("collapsedCategories", JSON.stringify(collapsed));
 }
 
 function getFavicon(url){
@@ -61,38 +97,57 @@ function getFavicon(url){
     }
 }
 
-/* =========================
+/* ===============================
    RENDER
-========================= */
+================================ */
 
 function render(){
-    const container = document.getElementById("categoriesContainer");
-    container.innerHTML = "";
+    categoriesContainer.innerHTML = "";
 
-    const categories = [...new Set(services.map(s=>s.category || "General"))];
+    const categories = [...new Set(services.map(s => s.category || "General"))];
 
-    categories.forEach(category=>{
-        const catDiv = document.createElement("div");
-        catDiv.className = "category";
+    categories.forEach(category => {
+
+        const wrapper = document.createElement("div");
+        wrapper.className = "category";
 
         const header = document.createElement("div");
         header.className = "category-header";
-        header.innerHTML = `${category} <span>${collapsedCategories[category] ? "+" : "−"}</span>`;
+        header.textContent = category;
 
-        header.onclick = ()=>{
-            collapsedCategories[category] = !collapsedCategories[category];
-            saveCollapsed();
+        const toggle = document.createElement("span");
+        toggle.textContent = collapsed[category] ? "+" : "−";
+        header.appendChild(toggle);
+
+        header.onclick = () => {
+            collapsed[category] = !collapsed[category];
+            saveState();
             render();
         };
 
         const grid = document.createElement("div");
         grid.className = "category-grid";
-        if(collapsedCategories[category]) grid.classList.add("collapsed");
+        grid.dataset.category = category;
+        if(collapsed[category]) grid.classList.add("collapsed");
+
+        grid.addEventListener("dragover", e => {
+            e.preventDefault();
+            const dragging = document.querySelector(".dragging");
+            const afterElement = getDragAfterElement(grid, e.clientY);
+            if(!dragging) return;
+
+            if(afterElement == null){
+                grid.appendChild(dragging);
+            } else {
+                grid.insertBefore(dragging, afterElement);
+            }
+        });
 
         services
-            .filter(s=> (s.category || "General") === category)
+            .filter(s => (s.category || "General") === category)
             .sort((a,b)=>a.order-b.order)
-            .forEach(service=>{
+            .forEach(service => {
+
                 const card = document.createElement("div");
                 card.className = "card";
                 card.draggable = true;
@@ -105,39 +160,35 @@ function render(){
                     <p>${service.desc}</p>
                 `;
 
-                card.onclick = ()=> window.open(service.url,"_blank");
+                card.onclick = () => window.open(service.url,"_blank");
 
-                /* Drag Events */
-                card.addEventListener("dragstart", ()=>{
+                card.oncontextmenu = (e) => {
+                    e.preventDefault();
+                    openEdit(service);
+                };
+
+                card.addEventListener("dragstart", () => {
                     card.classList.add("dragging");
                 });
 
-                card.addEventListener("dragend", ()=>{
+                card.addEventListener("dragend", () => {
                     card.classList.remove("dragging");
                     updateOrder();
-                });
-
-                grid.addEventListener("dragover", e=>{
-                    e.preventDefault();
-                    const afterElement = getDragAfterElement(grid, e.clientY);
-                    const dragging = document.querySelector(".dragging");
-                    if(afterElement == null){
-                        grid.appendChild(dragging);
-                    } else {
-                        grid.insertBefore(dragging, afterElement);
-                    }
                 });
 
                 grid.appendChild(card);
             });
 
-        catDiv.appendChild(header);
-        catDiv.appendChild(grid);
-        container.appendChild(catDiv);
+        wrapper.appendChild(header);
+        wrapper.appendChild(grid);
+        categoriesContainer.appendChild(wrapper);
     });
 }
 
-/* Determine drop position */
+/* ===============================
+   DRAG ORDER
+================================ */
+
 function getDragAfterElement(container, y){
     const elements = [...container.querySelectorAll(".card:not(.dragging)")];
     return elements.reduce((closest, child)=>{
@@ -151,10 +202,10 @@ function getDragAfterElement(container, y){
     }, {offset: Number.NEGATIVE_INFINITY}).element;
 }
 
-/* Update persistent order */
 function updateOrder(){
     document.querySelectorAll(".category-grid").forEach(grid=>{
-        const category = grid.previousSibling.textContent.trim().slice(0,-1);
+        const category = grid.dataset.category;
+
         [...grid.children].forEach((card,index)=>{
             const id = Number(card.dataset.id);
             const service = services.find(s=>s.id===id);
@@ -162,48 +213,73 @@ function updateOrder(){
             service.category = category;
         });
     });
-    saveServices();
+
+    saveState();
     render();
 }
 
-/* =========================
-   ADD / EDIT
-========================= */
+/* ===============================
+   MODAL
+================================ */
 
-addServiceBtn.onclick = ()=>{
-    editId=null;
-    serviceModal.classList.remove("hidden");
+addServiceBtn.onclick = () => {
+    editId = null;
+    nameInput.value = "";
+    urlInput.value = "";
+    descInput.value = "";
+    categoryInput.value = "";
+    iconInput.value = "";
+    deleteBtn.classList.add("hidden");
+    modal.classList.remove("hidden");
 };
 
-cancelService.onclick = ()=> serviceModal.classList.add("hidden");
+cancelBtn.onclick = () => modal.classList.add("hidden");
 
-saveService.onclick = ()=>{
+saveBtn.onclick = () => {
     const newService = {
         id: editId || Date.now(),
-        name: serviceName.value,
-        url: serviceUrl.value,
-        desc: serviceDesc.value,
-        category: serviceCategory.value || "General",
-        icon: serviceIcon.value,
+        name: nameInput.value,
+        url: urlInput.value,
+        desc: descInput.value,
+        category: categoryInput.value || "General",
+        icon: iconInput.value,
         order: 999
     };
 
     if(editId){
-        services = services.map(s=> s.id===editId ? newService : s);
+        services = services.map(s => s.id===editId ? newService : s);
     } else {
         services.push(newService);
     }
 
-    saveServices();
-    serviceModal.classList.add("hidden");
+    saveState();
+    modal.classList.add("hidden");
     render();
 };
 
-/* =========================
-   SEARCH
-========================= */
+deleteBtn.onclick = () => {
+    services = services.filter(s=>s.id!==editId);
+    saveState();
+    modal.classList.add("hidden");
+    render();
+};
 
-search.addEventListener("keydown", e=>{
+function openEdit(service){
+    editId = service.id;
+    nameInput.value = service.name;
+    urlInput.value = service.url;
+    descInput.value = service.desc;
+    categoryInput.value = service.category;
+    iconInput.value = service.icon || "";
+    deleteBtn.classList.remove("hidden");
+    modal.classList.remove("hidden");
+}
+
+/* ===============================
+   SEARCH
+================================ */
+
+searchInput.addEventListener("keydown", e=>{
     if(e.key==="Enter"){
         const q = e.target.value.toLowerCase();
         const match = services.find(s=>s.name.toLowerCase().includes(q));
@@ -215,5 +291,5 @@ search.addEventListener("keydown", e=>{
     }
 });
 
-/* Initial render */
+/* INITIAL */
 render();
