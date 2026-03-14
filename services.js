@@ -1,20 +1,34 @@
-import { services, collapsed, saveState, setServices } from "./state.js";
+import { services, collapsed, saveState } from "./state.js";
 
-function normalizeUrl(url){
-    if(!url.startsWith("http://") && !url.startsWith("https://")){
-        return "http://" + url;
+/* ===============================
+   URL NORMALIZATION
+================================ */
+
+function normalizeUrl(url) {
+
+    if (!url) return "";
+
+    url = url.trim();
+
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+        return url;
     }
-    return url;
+
+    return "https://" + url;
 }
 
 function getFavicon(url){
-    try{
+    try {
         const u = new URL(normalizeUrl(url));
         return `${u.origin}/favicon.ico`;
     } catch {
         return "https://via.placeholder.com/32";
     }
 }
+
+/* ===============================
+   RENDER SERVICES
+================================ */
 
 export function renderServices() {
 
@@ -45,11 +59,14 @@ export function renderServices() {
         const grid = document.createElement("div");
         grid.className = "category-grid";
         grid.dataset.category = category;
-        if(collapsed[category]) grid.classList.add("collapsed");
+
+        if (collapsed[category]) {
+            grid.classList.add("collapsed");
+        }
 
         services
             .filter(s => (s.category || "General") === category)
-            .sort((a,b)=>a.order-b.order)
+            .sort((a, b) => a.order - b.order)
             .forEach(service => {
 
                 const card = document.createElement("div");
@@ -58,13 +75,15 @@ export function renderServices() {
                 card.dataset.id = service.id;
 
                 card.innerHTML = `
-                    <img src="${service.icon || getFavicon(service.url)}">
+                    <img src="${service.icon || getFavicon(service.url)}"
+                         onerror="this.src='https://via.placeholder.com/32'">
                     <h3>${service.name}</h3>
                     <p>${service.desc}</p>
                 `;
 
-                card.onclick = () =>
+                card.onclick = () => {
                     window.open(normalizeUrl(service.url), "_blank");
+                };
 
                 grid.appendChild(card);
             });
