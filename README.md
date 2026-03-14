@@ -1,6 +1,6 @@
 # Homepage
 ## Docker-Compose
-```yml
+```yaml
 version: '3.8'
 
 services:
