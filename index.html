@@ -26,22 +26,44 @@
 </header>
 
 <main>
+
     <div class="controls">
         <button id="addServiceBtn">+ Add Service</button>
     </div>
 
+    <!-- SERVICES -->
     <section id="categoriesContainer"></section>
+
+    <!-- EXTRA PANELS -->
+    <section class="extras">
+
+        <!-- BOOKMARKS -->
+        <div class="bookmarks-section">
+            <h2>Bookmarks</h2>
+            <div id="bookmarksContainer" class="bookmark-grid"></div>
+            <button id="addBookmarkBtn">+ Add Bookmark</button>
+        </div>
+
+        <!-- NOTES -->
+        <div class="notes-section">
+            <h2>Notes</h2>
+            <textarea id="notesArea" placeholder="Write your notes here..."></textarea>
+        </div>
+
+    </section>
+
 </main>
 
-<!-- Modal -->
+<!-- SERVICE MODAL -->
 <div id="serviceModal" class="modal hidden">
     <div class="modal-content">
-        <h2 id="modalTitle">Add Service</h2>
+        <h2>Add / Edit Service</h2>
         <input type="text" id="serviceName" placeholder="Service Name">
-        <input type="text" id="serviceUrl" placeholder="https://example.local">
+        <input type="text" id="serviceUrl" placeholder="https://portainer.local">
         <input type="text" id="serviceDesc" placeholder="Description">
         <input type="text" id="serviceCategory" placeholder="Category">
         <input type="text" id="serviceIcon" placeholder="Custom Icon URL (optional)">
+
         <div class="modal-buttons">
             <button id="saveService">Save</button>
             <button id="deleteService" class="danger hidden">Delete</button>
@@ -50,6 +72,8 @@
     </div>
 </div>
 
+<!-- IMPORTANT: MODULE MODE -->
 <script type="module" src="main.js"></script>
+
 </body>
 </html>
