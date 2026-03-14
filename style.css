@@ -1,0 +1,36 @@
+.category {
+    margin: 20px;
+}
+
+.category-header {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--accent);
+    cursor: pointer;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+}
+
+.category-header:hover {
+    opacity: 0.8;
+}
+
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
+    gap: 20px;
+    transition: all 0.3s ease;
+}
+
+.category-grid.collapsed {
+    display: none;
+}
+
+.card.dragging {
+    opacity: 0.4;
+}
+
+.card.drag-over {
+    border: 2px dashed var(--accent);
+}
